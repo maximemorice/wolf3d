@@ -5,130 +5,148 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: mmorice <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2016/12/13 18:41:17 by mmorice           #+#    #+#             */
-/*   Updated: 2017/02/02 17:17:01 by mmorice          ###   ########.fr       */
+/*   Created: 2017/02/10 22:38:34 by mmorice           #+#    #+#             */
+/*   Updated: 2017/02/10 22:42:50 by mmorice          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libmlx/mlx.h"
 #include "wolf3d.h"
+#include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 
-int		ft_dda(t_env *c)
+int		ft_dda(t_env *e)
 {
-	int		len;
-	double		x;
-	double		y;
-	int		i;
-	float	dx;
-	float	dy;
-
-	x = c->posCamX;
-	y = c->posCamY;
-	dx = c->sensCamX;
-	dy = c->sensCamY;
-
-/*
-	if ((c->sensCamX - c->posCamX) >= (c->sensCamY - c->posCamY))
-		len = c->sensCamX - c->posCamX;
-	else
-		len = c->sensCamY - c->posCamY;
-	dx = (c->sensCamX - c->posCamX) / len;
-	dy = (c->sensCamX - c->posCamX) / len;
-	x = c->posCamX + 0.5;
-	y = c->posCamY + 0.5;
-	i = 0;
-	ft_putnbr(x);
-	ft_putchar(';');
-	ft_putnbr(y);
-	ft_putchar('\n');
-	while (i <= len || c->tab[(int)x][(int)y] == 48)
+	e->xa = sqrt(1 + (e->senscamy * e->senscamy) / (e->senscamx * e->senscamx));
+	e->ya = sqrt(1 + (e->senscamx * e->senscamx) / (e->senscamy * e->senscamy));
+	e->mapx = (int)e->poscamx;
+	e->mapy = (int)e->poscamy;
+	if (e->senscamx < 0)
 	{
-		x = x + dx;
-		y = y + dy;
-		i++;
+		e->stepx = -1;
+		e->dx = (e->poscamx - e->mapx) * e->xa;
 	}
-//	ft_putchar('=');
-//	ft_putnbr(c->tab[(int)x][(int)y]);*/
+	else
+	{
+		e->stepx = 1;
+		e->dx = (e->mapx + 1.0 - e->poscamx) * e->xa;
+	}
+	if (e->senscamy < 0)
+	{
+		e->stepy = -1;
+		e->dy = (e->poscamy - e->mapy) * e->ya;
+	}
+	else
+	{
+		e->stepy = 1;
+		e->dy = (e->mapy + 1.0 - e->poscamy) * e->ya;
+	}
 	return (1);
+}
+
+void	ft_height(t_env *e, int x)
+{
+	double	perpwalldist;
+	int		lineheight;
+
+	if (e->side == 0)
+		perpwalldist = fabs((e->mapx - e->poscamx + (1 - e->stepx) / 2)
+		/ e->senscamx);
+	else
+		perpwalldist = fabs((e->mapy - e->poscamy + (1 - e->stepy) / 2)
+		/ e->senscamy);
+	lineheight = abs((int)(e->height / perpwalldist));
+	e->drawstart = -lineheight / 2 + e->height / 2;
+	if (e->drawstart < 0)
+		e->drawstart = 0;
+	e->drawend = lineheight / 2 + e->height / 2;
+	if (e->drawend >= e->height)
+		e->drawend = e->height - 1;
+	ft_draw(x, e);
 }
 
 int		loop_hook(t_env *e)
 {
+	double	camerax;
+	int		x;
+
+	x = 0;
 	e->imag = mlx_new_image(e->mlx, e->len, e->height);
 	e->data = mlx_get_data_addr(e->imag, &e->bpp, &e->s_line, &e->endian);
 	e->img_color = mlx_get_color_value(e->mlx, 0xffffff);
-	ft_dda(e);
+	while (x < e->len)
+	{
+		camerax = 2 * x / (double)e->len - 1;
+		e->poscamx = e->posx;
+		e->poscamy = e->posy;
+		e->senscamx = e->dirx + e->planex * camerax;
+		e->senscamy = e->diry + e->planey * camerax;
+		ft_dda(e);
+		ft_hit(e);
+		ft_height(e, x);
+		x++;
+	}
 	mlx_put_image_to_window(e->mlx, e->win, e->imag, 0, 0);
 	mlx_destroy_image(e->mlx, e->imag);
 	return (0);
 }
 
-double		**ft_readmap(char **argv, char *line)
+double	**ft_readmap(double **t, t_env *e, int i, int y)
 {
-	int		fd;
-	double		**tmp;
-	int		i;
-	int		len;
-	int		y;
-
-	line = NULL;
-	i = 0;
-	tmp = NULL;
-	fd = open(argv[1], O_RDONLY);
-	tmp = (double **)malloc(sizeof(double *) * 24);
-	while (get_next_line(fd, &line) > 0)
+	e->fd = open(e->argv[1], O_RDONLY);
+	while (get_next_line(e->fd, &e->line) > 0 && ++e->malloc)
 	{
-		y = 0;
-		len = ft_strlen(line);
-		tmp[i] = (double *)malloc(sizeof(double ) * len);
-		while (len > y)
-		{
-			tmp[i][y] = line[y] - 48;
-			y++;
-		}
-		free(line);
-		i++;
+		e->mlen = ft_strlen(e->line);
+		ft_strdel(&e->line);
 	}
-	close(fd);
-	if (tmp == NULL)
+	(e->malloc == 0) ? ft_fail() : NULL;
+	t = (double **)malloc(sizeof(double *) * e->malloc);
+	close(e->fd);
+	e->fd = open(e->argv[1], O_RDONLY);
+	e->line = NULL;
+	while (get_next_line(e->fd, &e->line) > 0 && (y = -1))
 	{
-		ft_putstr("wolf3d: no such file: ");
-		ft_putendl(argv[1]);
+		t[i] = (double *)malloc(sizeof(double ) * e->mlen + 1);
+		while (e->mlen > ++y)
+			t[i][y] = e->line[y] - 48;
+		t[i][y] = 42;
+		(t[i][y - 1] != 1 || t[i++][0] != 1) ? ft_fail() : NULL;
+		free(e->line);
 	}
-	return (tmp);
+	close(e->fd);
+	while (y != 0)
+		(t[0][--y] != 1 || t[i - 1][y] != 1 || t[2][1] != 0) ? ft_fail() : NULL;
+	(t[2][2] != 0 || t[1][2] != 0 || t[1][1] != 0) ? ft_fail() : NULL;
+	return (t);
 }
 
 int		main(int argc, char **argv)
 {
 	t_env	e;
-	char	*line;
 
-	line = NULL;
-	if (argc != 2)
-	{
-		ft_putendl("usage: ./wolf3d mapname.c.");
-		return (1);
-	}
-	e.height = 200;
-	e.len = 320;
+	e.line = NULL;
+	(argc != 2) ? ft_fail() : NULL;
+	e.height = 480;
+	e.len = 640;
 	e.tab = NULL;
-	e.tab = ft_readmap(argv, line);
-	if (e.tab == NULL)
-		return (0);
-	free(line);
-	e.posCamX = 22;
-	e.posCamY = 12;
-	e.sensCamY = 0;
-	e.sensCamX = -1;
-	e.planeX = 0;
-	e.planeY = 0.66;
+	e.i = 0;
+	e.malloc = 0;
+	e.argv = argv;
+	e.tab = ft_readmap(e.tab, &e, e.i, e.y);
+	e.posx = 2;
+	e.posy = 2;
+	e.diry = 0;
+	e.dirx = -1;
+	e.planex = 0;
+	e.planey = 0.66;
 	e.mlx = mlx_init();
 	e.win = mlx_new_window(e.mlx, e.len, e.height, "wolf3d");
-	mlx_key_hook(e.win, fct_close, &e);
 	mlx_loop_hook(e.mlx, loop_hook, &e);
+	mlx_hook(e.win, 17, (1l << 17), mouse_clic, 0);
+	mlx_hook(e.win, 2, (1l << 0), fct_close, &e);
 	mlx_loop(e.mlx);
 	return (0);
 }

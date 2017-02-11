@@ -6,7 +6,7 @@
 #    By: mmorice <marvin@42.fr>                     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2016/11/04 15:55:34 by mmorice           #+#    #+#              #
-#    Updated: 2017/01/31 18:33:02 by mmorice          ###   ########.fr        #
+#    Updated: 2017/02/10 17:32:11 by mmorice          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,7 +28,7 @@ libmlx/libmlx.a:
 
 $(NAME): libmlx/libmlx.a libft/libft.a  $(OBJS)
 	gcc -o $(NAME) $(OBJS) libmlx/libmlx.a libft/libft.a \
-		-framework OpenGL -framework Appkit
+		-framework OpenGL -framework Appkit -flto
 %.o: %.c
 	gcc -Wall -Wextra -Werror -I ./ -I libft/ -I libmlx/ -o $@ -c $<
 clean:

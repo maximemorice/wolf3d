@@ -6,7 +6,7 @@
 #    By: mmorice <marvin@42.fr>                     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2016/11/04 15:55:34 by mmorice           #+#    #+#              #
-#    Updated: 2016/12/13 18:22:34 by mmorice          ###   ########.fr        #
+#    Updated: 2017/02/07 18:49:44 by mmorice          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,7 +22,7 @@ SRCS = ft_bzero.c ft_memcpy.c ft_memset.c ft_putchar_fd.c ft_atoi.c \
 	   ft_strmap.c ft_memalloc.c ft_memdel.c ft_strnew.c ft_striteri.c \
 	   ft_striter.c ft_strclr.c ft_strdel.c ft_strncat.c ft_memmove.c \
 	   ft_strchr.c ft_memchr.c ft_memcmp.c ft_strlcat.c ft_strstr.c \
-	   ft_strnstr.c ft_strrchr.c get_next_line.c
+	   ft_strnstr.c ft_strrchr.c get_next_line.c ft_fabs.c
 OBJS = $(addsuffix .o, $(basename $(SRCS)))
 
 .PHONY: all clean re fclean

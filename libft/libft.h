@@ -6,7 +6,7 @@
 /*   By: mmorice <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/11/04 20:48:13 by mmorice           #+#    #+#             */
-/*   Updated: 2017/01/18 13:32:40 by mmorice          ###   ########.fr       */
+/*   Updated: 2017/02/10 03:34:42 by mmorice          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ char	*ft_strnstr(const char *big, const char *little, size_t len);
 char	*ft_strstr(const char *big, const char *little);
 void	ft_putchar(char c);
 int		ft_atoi(const char *str);
+float	ft_fabs(float i);
 void	ft_bzero(void *s, size_t n);
 void	*ft_memset(void *b, int c, size_t len);
 void	*ft_memccpy(void *dest, const void *src, int c, size_t n);
